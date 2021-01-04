@@ -77,17 +77,29 @@ class Game extends React.Component {
                 board: Array(9).fill(null)
             }],
             oIsNext: true,
-            winner: null
+            winner: null,
+            stepNumber: 0
         }
     }
 
     render() {
-        let current = this.state.history[this.state.history.length - 1];
+        let history = this.state.history;
+        let current = history[this.state.stepNumber];
         let status;
         if(this.state.winner)
             status = this.state.winner === 'tie' ? "Tie" : `${this.state.winner} won!`;
         else
             status = `Next player: ${this.state.oIsNext ? "O": "X"}`;
+        let moves = history.map((step, move) => {
+            const label = move ? `Go to move #${move}` : 'Go to game start'
+            return (
+                <li key = {move}>
+                    <button onClick={()=> this.jumpTo(move)} >
+                        {label}
+                    </button>
+                </li>
+            )
+        })
 
         return (
             <div className="game">
@@ -99,14 +111,25 @@ class Game extends React.Component {
                 </div>
                 <div className="game-info">
                     <div>{status}</div>
-                    <ol>{/* TODO */}</ol>
+                    <ol>
+                        {moves}
+                    </ol>
                 </div>
             </div>
         );
     }
 
+    jumpTo = move => {
+        this.setState({
+            stepNumber: move,
+            oIsNext: move % 2 === 0,
+            winner: this.checkWin(this.state.history[move].board, this.state.history[move].move_played)
+        })
+    }
+
     handleClick = i => {
-        let current_board = this.state.history[this.state.history.length - 1].board;
+        let history = this.state.history.slice(0, this.state.stepNumber + 1);
+        let current_board = history[history.length - 1].board;
         if(current_board[i] != null || this.state.winner != null)
             return;
 
@@ -116,11 +139,12 @@ class Game extends React.Component {
         let turn_winner = this.checkWin(new_board, i);
 
         this.setState({
-            history: this.state.history.concat([
-                {board: new_board}
+            history: history.concat([
+                {board: new_board, move_played: i}
             ]),
             oIsNext: !this.state.oIsNext,
-            winner: turn_winner
+            winner: turn_winner,
+            stepNumber: history.length
         });
     }
 
